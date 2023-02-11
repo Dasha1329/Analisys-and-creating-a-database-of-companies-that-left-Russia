@@ -1,0 +1,37 @@
+from bs4 import BeautifulSoup
+import requests
+import pandas as pd
+
+url = 'https://bankstoday.net/last-articles/kompanii-ushedshie-s-rossiyskogo-rynka'
+req = requests.get(url)
+src = req.text
+
+soup = BeautifulSoup(src, 'lxml')
+names = soup.findAll(class_='modernUl')
+all_companies = {}
+for ul in names:
+    for li in ul.findAll('li'):
+        text = li.text
+        text = text.split(' –')
+        all_companies[text[0]] = text[1][1:-1]
+
+print(all_companies, sep='\n')
+
+# Это табличка, 1 столбец Name, 2 Action
+data = pd.DataFrame( {"Name" : [], "Action" : []} )
+
+for i in all_companies:
+    # Создаем временный массив где первое значение - имя компании, второе - почему ушла
+    temp = []   # temp = [i, all_companies.get(i)]
+    temp.append(i)
+    temp.append(all_companies.get(i))
+    # Закидываем в табличку, в 1 столбец пойдет temp[0] во второй temp[1]
+    data.loc[len(data)] = temp
+    # Чистим массив
+    temp.clear()
+
+# Выгружаем таббличку в сsv
+# Потом csv легко можно импортировать в excel
+data.to_csv("Список компаний Даша 2", encoding='utf-8')
+# Это чтобы проверить что всё ок
+print(data)
